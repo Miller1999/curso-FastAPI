@@ -37,3 +37,8 @@ def get_movie_by_id(id:int):
     if item["id"] == id:
       return item
   return []
+
+@app.get("/movies/",tags=["Movies"])
+def get_movies_by_category(category:str):
+  filtered = [movie for movie in movies if movie["category"] == category]
+  return filtered
