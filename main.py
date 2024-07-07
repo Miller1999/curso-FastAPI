@@ -1,9 +1,20 @@
 from fastapi import FastAPI, Body
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
+from typing import Optional
 
 app = FastAPI()
 app.title = "Mi primera api con FastAPI"
 app.version = "0.0.1"
+
+# Se crea esto para evitar pasar todo por parametro, esto es similar a las interfaces de typescript
+class Movie(BaseModel):
+    id: Optional[int] = None # De esta manera se puede hacer un modo opcional para este parametro
+    title: str
+    overview: str
+    year: int
+    rating: float
+    category: str
 # Informacion de ejemplo
 movies = [
     {
@@ -45,26 +56,19 @@ def get_movies_by_category(category:str):
   return filtered
 
 @app.post("/movies",tags=["Movies"])
-def create_movies(id:int = Body(),title:str= Body(),overview:str= Body(),year:int= Body(),rating:float= Body(),category:str= Body()):
-  movies.append({
-    "id":id,
-    "title":title,
-    "overview":overview,
-    "year":year,
-    "rating":rating,
-    "category":category
-  })
+def create_movies(movie: Movie):
+  movies.append(movie)
   return movies
 
 @app.put('/movies/{id}', tags=['Movies'])
-def update_movie(id: int, title: str = Body(), overview: str = Body(), year: int = Body(), rating: float = Body(), category: str = Body()):
+def update_movie(id: int, movie:Movie):
 	for item in movies:
 		if item['id'] == id:
-			item['title'] = title
-			item['overview'] = overview
-			item['year'] = year
-			item['rating'] = rating
-			item['category'] = category
+			item['title'] = movie.title
+			item['overview'] = movie.overview
+			item['year'] = movie.year
+			item['rating'] = movie.rating
+			item['category'] = movie.category
 			return movies 
         
 @app.delete('/movies/{id}', tags=['Movies'])
