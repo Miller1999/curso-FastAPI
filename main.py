@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Body
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 app = FastAPI()
@@ -8,13 +8,29 @@ app.title = "Mi primera api con FastAPI"
 app.version = "0.0.1"
 
 # Se crea esto para evitar pasar todo por parametro, esto es similar a las interfaces de typescript
+#  Se extiende de BaseModel, Field se usa para validaciones
 class Movie(BaseModel):
     id: Optional[int] = None # De esta manera se puede hacer un modo opcional para este parametro
-    title: str
-    overview: str
-    year: int
-    rating: float
-    category: str
+    title: str = Field(min_length=5, max_length=15)
+    overview: str = Field(min_length=15, max_length=150)
+    year: int = Field(le=2022)
+    rating: float = Field(le=10.0,ge=0)
+    category: str = Field(min_length=5,max_length=15)
+
+# Con este diccionario model_config se puede establecer el ejemplo de la informacion que debe llevar el body
+    model_config = {
+        "json_schema_extra": {
+            "examples":[
+                {
+                "id":1,
+                "title":"Mi pelicula",
+                "overview":"Descripcion de la pelicula",
+                "year":2022,
+                "rating":9.8,
+                "category":"Accion"}
+            ]
+        }
+    }
 # Informacion de ejemplo
 movies = [
     {
