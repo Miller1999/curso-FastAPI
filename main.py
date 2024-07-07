@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Body, Path, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 app = FastAPI()
 app.title = "Mi primera api con FastAPI"
@@ -50,31 +50,33 @@ movies = [
 	}
 ]
 # tags funciona para la documentacion, a esta se accede con /docs
+# Con la clase JSONResponse retornamos una respuesta JSON, lo caul nos sirve para la API, pero lo que vamos a devolver va dentro de content
 @app.get("/",tags=["Home"])
 def message():
   return HTMLResponse("<h1>Hello world</h1>")
 # Asi funciona get
-@app.get("/movies",tags=["Movies"])
-def get_movies():
-  return movies
+# Con response model especificamos que output vamos a tener de la misma manera en las fuciones con ->
+@app.get("/movies",tags=["Movies"],response_model=List[Movie])
+def get_movies() -> List[Movie]:
+  return JSONResponse(content=movies)
 # Los parametros de ruta se colocan en la ruta, con Path nos permite hacer validaciones como en Field pero en los parametros de ruta
 @app.get("/movies/{id}",tags=["Movies"])
 def get_movie_by_id(id:int = Path(ge=1,le=2000)):
   for item in movies:
     if item["id"] == id:
-      return item
-  return []
+      return JSONResponse(content=item)
+  return JSONResponse(content=[])
 
 @app.get("/movies/",tags=["Movies"])
 # las query se colocan como parametros de las funciones, de igual manera con Query para los parametros Query
 def get_movies_by_category(category:str = Query(min_length=5,max_length=15)):
   filtered = [movie for movie in movies if movie["category"] == category]
-  return filtered
+  return JSONResponse(content=filtered)
 
 @app.post("/movies",tags=["Movies"])
 def create_movies(movie: Movie):
   movies.append(movie)
-  return movies
+  return JSONResponse(content={"message":"Se ha registrado la pelicula"})
 
 @app.put('/movies/{id}', tags=['Movies'])
 def update_movie(id: int, movie:Movie):
@@ -85,11 +87,11 @@ def update_movie(id: int, movie:Movie):
 			item['year'] = movie.year
 			item['rating'] = movie.rating
 			item['category'] = movie.category
-			return movies 
+			return JSONResponse(content={"message":"Se ha actualizado la pelicula"})
         
 @app.delete('/movies/{id}', tags=['Movies'])
 def delete_movie(id: int):
     for item in movies:
         if item["id"] == id:
             movies.remove(item)
-            return movies
+            return JSONResponse(content={"message":"Se ha eliminado la pelicula"})
