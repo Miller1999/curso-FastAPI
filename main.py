@@ -65,7 +65,7 @@ def get_movie_by_id(id:int = Path(ge=1,le=2000)):
   for item in movies:
     if item["id"] == id:
       return JSONResponse(content=item)
-  return JSONResponse(content=[])
+  return JSONResponse(status_code=404,content=[])
 
 @app.get("/movies/",tags=["Movies"])
 # las query se colocan como parametros de las funciones, de igual manera con Query para los parametros Query
