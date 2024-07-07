@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Path, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -57,17 +57,17 @@ def message():
 @app.get("/movies",tags=["Movies"])
 def get_movies():
   return movies
-# Los parametros de ruta se colocan en la ruta
+# Los parametros de ruta se colocan en la ruta, con Path nos permite hacer validaciones como en Field pero en los parametros de ruta
 @app.get("/movies/{id}",tags=["Movies"])
-def get_movie_by_id(id:int):
+def get_movie_by_id(id:int = Path(ge=1,le=2000)):
   for item in movies:
     if item["id"] == id:
       return item
   return []
 
 @app.get("/movies/",tags=["Movies"])
-# las query se colocan como parametros de las funciones
-def get_movies_by_category(category:str):
+# las query se colocan como parametros de las funciones, de igual manera con Query para los parametros Query
+def get_movies_by_category(category:str = Query(min_length=5,max_length=15)):
   filtered = [movie for movie in movies if movie["category"] == category]
   return filtered
 
