@@ -2,10 +2,15 @@ from fastapi import FastAPI, Body, Path, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from jwt_manager import create_token
 
 app = FastAPI()
 app.title = "Mi primera api con FastAPI"
 app.version = "0.0.1"
+
+class User(BaseModel):
+    email:str
+    password:str
 
 # Se crea esto para evitar pasar todo por parametro, esto es similar a las interfaces de typescript
 #  Se extiende de BaseModel, Field se usa para validaciones
@@ -66,6 +71,10 @@ def get_movie_by_id(id:int = Path(ge=1,le=2000)):
     if item["id"] == id:
       return JSONResponse(content=item)
   return JSONResponse(status_code=404,content=[])
+
+@app.post("/login",tags=["Auth"])
+def login(user:User):
+    return user
 
 @app.get("/movies/",tags=["Movies"])
 # las query se colocan como parametros de las funciones, de igual manera con Query para los parametros Query
