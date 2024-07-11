@@ -1,13 +1,21 @@
-from fastapi import FastAPI, Body, Path, Query
+from fastapi import FastAPI, Body, Path, Query, Request, HTTPException,Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from jwt_manager import create_token,validate_token
+from fastapi.security import HTTPBearer
 
 app = FastAPI()
 app.title = "Mi primera api con FastAPI"
 app.version = "0.0.1"
 
+# Clase para poder autenticar el acceso 
+class JWTBearer(HTTPBearer):
+    async def __call__(self, request: Request):
+        auth = await super().__call__(request)
+        data = validate_token(auth.credentials)
+        if data["email"] != "admin@gmail.com":
+            raise HTTPException(status_code=403,detail="Credenciales invalidas")
 class User(BaseModel):
     email:str
     password:str
@@ -61,7 +69,8 @@ def message():
   return HTMLResponse("<h1>Hello world</h1>")
 # Asi funciona get
 # Con response model especificamos que output vamos a tener de la misma manera en las fuciones con ->
-@app.get("/movies",tags=["Movies"],response_model=List[Movie])
+# usando la funcion Depends validamos que el usuario tenga permisos para acceder a este endpoint
+@app.get("/movies",tags=["Movies"],response_model=List[Movie],dependencies=[Depends(JWTBearer())])
 def get_movies() -> List[Movie]:
   return JSONResponse(content=movies)
 # Los parametros de ruta se colocan en la ruta, con Path nos permite hacer validaciones como en Field pero en los parametros de ruta
