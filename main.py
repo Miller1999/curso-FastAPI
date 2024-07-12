@@ -114,18 +114,24 @@ def create_movies(movie: Movie):
 
 @app.put('/movies/{id}', tags=['Movies'])
 def update_movie(id: int, movie:Movie):
-	for item in movies:
-		if item['id'] == id:
-			item['title'] = movie.title
-			item['overview'] = movie.overview
-			item['year'] = movie.year
-			item['rating'] = movie.rating
-			item['category'] = movie.category
-			return JSONResponse(content={"message":"Se ha actualizado la pelicula"})
-        
+  db= session()
+  result = db.query(MovieModel).filter(MovieModel.id == id).first()
+  if not result:
+      return JSONResponse(status_code=404,content={"message": "No encontrado"})
+  result.title = movie.title
+  result.overview = movie.overview
+  result.year = movie.year
+  result.rating = movie.rating
+  result.category = movie.category
+  db.commit()
+  return JSONResponse(content={"message":"Se ha actualizado la pelicula"})
+
 @app.delete('/movies/{id}', tags=['Movies'])
 def delete_movie(id: int):
-    for item in movies:
-        if item["id"] == id:
-            movies.remove(item)
-            return JSONResponse(content={"message":"Se ha eliminado la pelicula"})
+    db= session()
+    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not result:
+      return JSONResponse(status_code=404,content={"message": "No encontrado"})
+    db.delete(result)
+    db.commit()
+    return JSONResponse(content={"message":"Se ha eliminado la pelicula"})
