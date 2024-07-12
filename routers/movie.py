@@ -1,22 +1,15 @@
 from fastapi import Path, Query,Depends,APIRouter
 from fastapi.responses import  JSONResponse
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import List
 from config.database import session
 from models.movie import Movie as MovieModel
 from fastapi.encoders import jsonable_encoder
 from middlewares.jwt_bearer import JWTBearer
 from services.movie import MovieService
+from schemas.movie import Movie
 
 movie_router = APIRouter()
 
-class Movie(BaseModel):
-    id: Optional[int] = None # De esta manera se puede hacer un modo opcional para este parametro
-    title: str = Field(min_length=5, max_length=15)
-    overview: str = Field(min_length=15, max_length=150)
-    year: int = Field(le=2022)
-    rating: float = Field(le=10.0,ge=0)
-    category: str = Field(min_length=5,max_length=15)
 
 @movie_router.get("/movies",tags=["Movies"],response_model=List[Movie],dependencies=[Depends(JWTBearer())])
 def get_movies() -> List[Movie]:
@@ -44,31 +37,24 @@ def get_movies_by_category(category:str = Query(min_length=5,max_length=15)):
 @movie_router.post("/movies",tags=["Movies"])
 def create_movies(movie: Movie):
   db = session()
-  new_movie = MovieModel(**movie.model_dump())
-  db.add(new_movie)
-  db.commit()
+  MovieService(db).create_movie(movie)
   return JSONResponse(content={"message":"Se ha registrado la pelicula"})
 
 @movie_router.put('/movies/{id}', tags=['Movies'])
 def update_movie(id: int, movie:Movie):
   db= session()
-  result = db.query(MovieModel).filter(MovieModel.id == id).first()
+  result = MovieService(db).get_movie_by_id(id)
   if not result:
       return JSONResponse(status_code=404,content={"message": "No encontrado"})
-  result.title = movie.title
-  result.overview = movie.overview
-  result.year = movie.year
-  result.rating = movie.rating
-  result.category = movie.category
+  MovieService(db).update_movie(id,movie)
   db.commit()
   return JSONResponse(content={"message":"Se ha actualizado la pelicula"})
 
 @movie_router.delete('/movies/{id}', tags=['Movies'])
 def delete_movie(id: int):
     db= session()
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    result = MovieService(db).get_movie_by_id(id)
     if not result:
       return JSONResponse(status_code=404,content={"message": "No encontrado"})
-    db.delete(result)
-    db.commit()
+    MovieService(db).delete_movie(id)
     return JSONResponse(content={"message":"Se ha eliminado la pelicula"})

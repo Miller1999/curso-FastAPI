@@ -1,32 +1,9 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from jwt_manager import create_token
+from schemas.user import User
+
 user_router = APIRouter()
-
-# Clase para poder autenticar el acceso 
-class User(BaseModel):
-    email:str
-    password:str
-
-# Se crea esto para evitar pasar todo por parametro, esto es similar a las interfaces de typescript
-#  Se extiende de BaseModel, Field se usa para validaciones
-
-
-# Con este diccionario model_config se puede establecer el ejemplo de la informacion que debe llevar el body
-    model_config = {
-        "json_schema_extra": {
-            "examples":[
-                {
-                "id":1,
-                "title":"Mi pelicula",
-                "overview":"Descripcion de la pelicula",
-                "year":2022,
-                "rating":9.8,
-                "category":"Accion"}
-            ]
-        }
-    }
 
 @user_router.post("/login",tags=["Auth"])
 def login(user:User):
