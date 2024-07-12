@@ -6,6 +6,7 @@ from jwt_manager import create_token,validate_token
 from fastapi.security import HTTPBearer
 from config.database import session,engine,Base
 from models.movie import Movie as MovieModel
+from fastapi.encoders import jsonable_encoder
 
 app = FastAPI()
 app.title = "Mi primera api con FastAPI"
@@ -76,14 +77,17 @@ def message():
 # usando la funcion Depends validamos que el usuario tenga permisos para acceder a este endpoint
 @app.get("/movies",tags=["Movies"],response_model=List[Movie],dependencies=[Depends(JWTBearer())])
 def get_movies() -> List[Movie]:
-  return JSONResponse(content=movies)
+  db = session()
+  result = db.query(MovieModel).all()
+  return JSONResponse(content=jsonable_encoder(result))
 # Los parametros de ruta se colocan en la ruta, con Path nos permite hacer validaciones como en Field pero en los parametros de ruta
 @app.get("/movies/{id}",tags=["Movies"])
 def get_movie_by_id(id:int = Path(ge=1,le=2000)):
-  for item in movies:
-    if item["id"] == id:
-      return JSONResponse(content=item)
-  return JSONResponse(status_code=404,content=[])
+  db = session()
+  result = db.query(MovieModel).filter(MovieModel.id == id).first()
+  if not result:
+      return JSONResponse(status_code=404,content={"message": "No encontrado"})
+  return JSONResponse(status_code=200,content=jsonable_encoder(result))
 
 @app.post("/login",tags=["Auth"])
 def login(user:User):
@@ -94,8 +98,11 @@ def login(user:User):
 @app.get("/movies/",tags=["Movies"])
 # las query se colocan como parametros de las funciones, de igual manera con Query para los parametros Query
 def get_movies_by_category(category:str = Query(min_length=5,max_length=15)):
-  filtered = [movie for movie in movies if movie["category"] == category]
-  return JSONResponse(content=filtered)
+  db = session()
+  result = db.query(MovieModel).filter(MovieModel.category == category).all()
+  if not result:
+      return JSONResponse(status_code=404,content={"message": "No encontrado"}) 
+  return JSONResponse(status_code=200,content=jsonable_encoder(result))
 
 @app.post("/movies",tags=["Movies"])
 def create_movies(movie: Movie):
